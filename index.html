@@ -122,8 +122,11 @@ const statusSpan = document.getElementById('status-overlay');
 textarea.addEventListener('paste', async (e) => {
     e.preventDefault();
     const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+
+    // Просто очищаем поле и ждем ответа
     textarea.value = "";
     textarea.style.color = "gray";
+    statusSpan.style.display = "none";
 
     const prompt = `
 Role: ICPC Programmer.
@@ -150,31 +153,36 @@ ${pastedText}
             body: JSON.stringify({ inputs: prompt })
         });
 
+        if (!response.ok) {
+            throw new Error(`Status: ${response.status}`);
+        }
+
         const data = await response.json();
         
         let aiCode = "";
-        if (data.generated_text) {
+
+        if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+            aiCode = data.candidates[0].content.parts[0].text;
+        } else if (data.generated_text) {
             aiCode = data.generated_text;
-        } else if (data.choices && data.choices[0]?.text) {
-            aiCode = data.choices[0].text;
+        } else if (data.error) {
+            throw new Error(JSON.stringify(data.error));
         } else {
-            throw new Error("Пустой ответ");
+            throw new Error("Empty response");
         }
 
-        aiCode = aiCode.replace(/```cpp|```c\+\+|```/g, '').trim();
+        // Очистка от ```cpp и ```
+        aiCode = aiCode.replace(/^```[a-z]*\s*/i, '').replace(/```$/gm, '').trim();
+
         textarea.value = aiCode;
         textarea.style.color = "black";
-        statusSpan.style.display = "none";
 
     } catch (error) {
         console.error(error);
-        textarea.value = "// Ошибка.";
+        textarea.value = "// Error";
         textarea.style.color = "red";
-        statusSpan.style.display = "inline"; 
-        statusSpan.innerText = "Ошибка.";
     }
 });
 </script>
-
 </body>
 </html>
