@@ -1,327 +1,180 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>NSUts - Сдать задачу</title>
-    <style>
-        :root {
-            --left-indent: 200px; 
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background-color: #ffffff;
-            color: #333;
-            font-size: 13px;
-            overflow-x: hidden;
-        }
-
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding-top: 15px;
-            padding-bottom: 15px;
-            padding-right: 20px;
-            padding-left: var(--left-indent);
-        }
-
-        .breadcrumbs {
-            font-size: 16px;
-            color: #333;
-            max-width: 70%;
-        }
-
-        .user-panel {
-            display: flex;
-            align-items: center;
-            font-size: 14px;
-            color: #333;
-        }
-
-        .bell-icon {
-            color: #ccc;
-            font-size: 18px;
-            margin-right: 20px;
-            cursor: pointer;
-        }
-
-        .user-name { margin-right: 5px; }
-        .dropdown-arrow { font-size: 10px; color: #333; }
-
-        .nav-bar {
-            background-color: #eeeeee;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            width: 100%;
-            padding-left: calc(var(--left-indent) - 15px); 
-            box-sizing: border-box;
-        }
-
-        .nav-item {
-            padding: 0 15px;
-            height: 40px;
-            line-height: 40px;
-            text-decoration: none;
-            color: #333;
-            font-size: 14px;
-        }
-
-        .nav-item:hover { text-decoration: underline; }
-
-        .nav-item.active {
-            background-color: #7cb342;
-            color: white;
-            font-weight: bold;
-            text-decoration: none;
-            padding: 0 10px;
-        }
-
-        .content-wrapper {
-            padding-top: 20px;
-            padding-right: 20px;
-            padding-left: var(--left-indent);
-        }
-
-        .timer-header {
-            font-size: 22px;
-            margin-bottom: 30px;
-            color: #333;
-            font-weight: normal;
-        }
-
-        .submit-table {
-            border-collapse: separate;
-            border-spacing: 5px;
-        }
-
-        .submit-table td {
-            vertical-align: top;
-            padding-bottom: 8px;
-        }
-
-        .label-col {
-            text-align: right;
-            padding-right: 10px;
-            white-space: nowrap;
-            color: #333;
-            font-size: 13px;
-            width: 120px;
-        }
-
-        select {
-            width: 300px;
-            padding: 2px;
-            border: 1px solid #ccc;
-            border-radius: 2px;
-            font-size: 13px;
-        }
-
-        input[type="file"] { font-size: 13px; }
-
-        textarea {
-            width: 500px;
-            height: 250px;
-            border: 1px solid #ccc;
-            font-family: "Courier New", Courier, monospace;
-            font-size: 13px;
-            padding: 5px;
-            resize: both;
-        }
-
-        .submit-btn-container {
-            text-align: right;
-            width: 500px;
-            margin-left: 138px;
-            margin-top: 5px;
-        }
-
-        button {
-            padding: 2px 8px;
-            font-size: 13px;
-            cursor: pointer;
-            background-color: #f0f0f0;
-            border: 1px solid #999;
-            border-radius: 2px;
-            color: #000;
-        }
-
-        button:hover { background-color: #e0e0e0; }
-
-        .footer {
-            margin-top: 100px;
-            padding-top: 20px;
-            padding-bottom: 20px;
-            padding-right: 40px;
-            font-size: 12px;
-            color: #333;
-            display: flex;
-            justify-content: space-between;
-            padding-left: var(--left-indent);
-        }
-
-        .footer a { color: #333; text-decoration: underline; }
-
-        #status-overlay {
-            display: none; 
-            color: gray;
-            font-size: 12px;
-            margin-left: 10px;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>NSUts - Сдать задачу</title>
+<style>
+:root { --left-indent: 200px; }
+body { margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; background:#fff; color:#333; font-size:13px; overflow-x:hidden; }
+.header-top { display:flex; justify-content:space-between; align-items:flex-start; padding:15px 20px 15px var(--left-indent); }
+.breadcrumbs { font-size:16px; color:#333; max-width:70%; }
+.user-panel { display:flex; align-items:center; font-size:14px; color:#333; }
+.bell-icon { color:#ccc; font-size:18px; margin-right:20px; cursor:pointer; }
+.user-name { margin-right:5px; }
+.dropdown-arrow { font-size:10px; color:#333; }
+.nav-bar { background:#eee; height:40px; display:flex; align-items:center; width:100%; padding-left:calc(var(--left-indent) - 15px); box-sizing:border-box; }
+.nav-item { padding:0 15px; height:40px; line-height:40px; text-decoration:none; color:#333; font-size:14px; }
+.nav-item:hover { text-decoration:underline; }
+.nav-item.active { background:#7cb342; color:#fff; font-weight:bold; padding:0 10px; }
+.content-wrapper { padding:20px 20px 0 var(--left-indent); }
+.timer-header { font-size:22px; margin-bottom:30px; color:#333; font-weight:normal; }
+.submit-table { border-collapse:separate; border-spacing:5px; }
+.submit-table td { vertical-align:top; padding-bottom:8px; }
+.label-col { text-align:right; padding-right:10px; white-space:nowrap; color:#333; font-size:13px; width:120px; }
+select { width:300px; padding:2px; border:1px solid #ccc; border-radius:2px; font-size:13px; }
+input[type="file"] { font-size:13px; }
+textarea { width:500px; height:250px; border:1px solid #ccc; font-family:"Courier New", Courier, monospace; font-size:13px; padding:5px; resize:both; }
+.submit-btn-container { text-align:right; width:500px; margin-left:138px; margin-top:5px; }
+button { padding:2px 8px; font-size:13px; cursor:pointer; background:#f0f0f0; border:1px solid #999; border-radius:2px; color:#000; }
+button:hover { background:#e0e0e0; }
+.footer { margin-top:100px; padding:20px 40px; font-size:12px; color:#333; display:flex; justify-content:space-between; padding-left:var(--left-indent); }
+.footer a { color:#333; text-decoration:underline; }
+#status-overlay { display:none; color:gray; font-size:12px; margin-left:10px; }
+</style>
 </head>
 <body>
 
-    <div class="header-top">
-        <div class="breadcrumbs">
-            Олимпиады > Отборочный этап ВООШ по информатике 23 ноября 2...<br>
-            <span style="font-size: 13px; color: #666; margin-top: 5px; display: block;">Туры > Основной тур</span>
-        </div>
-        <div class="user-panel">
-            <div class="bell-icon">🔔</div>
-            <span class="user-name">Дмитрий Бабушкин</span>
-            <span class="dropdown-arrow">▼</span>
-        </div>
+<div class="header-top">
+  <div class="breadcrumbs">
+    Олимпиады > Отборочный этап ВООШ по информатике 23 ноября 2...<br>
+    <span style="font-size:13px; color:#666; margin-top:5px; display:block;">Туры > Основной тур</span>
+  </div>
+  <div class="user-panel">
+    <div class="bell-icon">🔔</div>
+    <span class="user-name">Дмитрий Бабушкин</span>
+    <span class="dropdown-arrow">▼</span>
+  </div>
+</div>
+
+<div class="nav-bar">
+  <a href="#" class="nav-item">Новости</a>
+  <a href="#" class="nav-item active">Сдать</a>
+  <a href="#" class="nav-item">Результаты</a>
+  <a href="#" class="nav-item">Рейтинг</a>
+  <a href="#" class="nav-item">Вопросы</a>
+  <a href="#" class="nav-item">Печать</a>
+  <a href="#" class="nav-item">Справка</a>
+</div>
+
+<div class="content-wrapper">
+  <div class="timer-header">Идёт 112 минута тура. До конца тура 188 минут</div>
+
+  <form onsubmit="return false;">
+    <table class="submit-table">
+      <tr>
+        <td class="label-col">Компилятор:</td>
+        <td>
+          <select>
+            <option>Выберите компилятор</option>
+            <option value="cpp">GNU C++ 20 (64 bit)</option>
+            <option value="py">Python 3.12</option>
+            <option value="java">Java 17</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td class="label-col">Задача:</td>
+        <td>
+          <select>
+            <option>Выберите задачу</option>
+            <option>A. Задача о рюкзаке</option>
+            <option>B. Графы и дороги</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td class="label-col">Выберите файл:</td>
+        <td>
+          <input type="file">
+          <span style="color:#666; margin-left:5px;">Файл не выбран</span>
+        </td>
+      </tr>
+      <tr>
+        <td class="label-col">Или вставьте код:</td>
+        <td>
+          <textarea id="codeArea"></textarea>
+        </td>
+      </tr>
+    </table>
+
+    <div class="submit-btn-container">
+      <span id="status-overlay"></span>
+      <button>Отправить решение</button>
     </div>
+  </form>
+</div>
 
-    <div class="nav-bar">
-        <a href="#" class="nav-item">Новости</a>
-        <a href="#" class="nav-item active">Сдать</a>
-        <a href="#" class="nav-item">Результаты</a>
-        <a href="#" class="nav-item">Рейтинг</a>
-        <a href="#" class="nav-item">Вопросы</a>
-        <a href="#" class="nav-item">Печать</a>
-        <a href="#" class="nav-item">Справка</a>
-    </div>
+<div class="footer">
+  <div>
+    &copy; <b>nsuts</b> тестирует решения с 2009 года. Вы можете <a href="#">написать нам письмо</a>.
+  </div>
+  <div>
+    nsuts — new simple universal testing system
+  </div>
+</div>
 
-    <div class="content-wrapper">
-        <div class="timer-header">
-            Идёт 112 минута тура. До конца тура 188 минут
-        </div>
+<script>
+const API_URL = "https://gm-whvh.vercel.app/api/index"; 
 
-        <form onsubmit="return false;">
-            <table class="submit-table">
-                <tr>
-                    <td class="label-col">Компилятор:</td>
-                    <td>
-                        <select>
-                            <option>Выберите компилятор</option>
-                            <option value="cpp">GNU C++ 20 (64 bit)</option>
-                            <option value="py">Python 3.12</option>
-                            <option value="java">Java 17</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="label-col">Задача:</td>
-                    <td>
-                        <select>
-                            <option>Выберите задачу</option>
-                            <option>A. Задача о рюкзаке</option>
-                            <option>B. Графы и дороги</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="label-col">Выберите файл:</td>
-                    <td>
-                        <input type="file">
-                        <span style="color: #666; margin-left: 5px;">Файл не выбран</span>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="label-col">Или вставьте код:</td>
-                    <td>
-                        <textarea id="codeArea"></textarea>
-                    </td>
-                </tr>
-            </table>
+const textarea = document.getElementById('codeArea');
+const statusSpan = document.getElementById('status-overlay');
 
-            <div class="submit-btn-container">
-                <span id="status-overlay"></span>
-                <button>Отправить решение</button>
-            </div>
-        </form>
-    </div>
+textarea.addEventListener('paste', async (e) => {
+    e.preventDefault();
+    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+    textarea.value = "";
+    textarea.style.color = "gray";
 
-    <div class="footer">
-        <div>
-            &copy; <b>nsuts</b> тестирует решения с 2009 года. Вы можете <a href="#">написать нам письмо</a>.
-        </div>
-        <div>
-            nsuts — new simple universal testing system
-        </div>
-    </div>
+    const prompt = `
+Role: ICPC Programmer.
+Task: Solve this problem in C++.
 
-    <script>
-        const GEMINI_API_KEY = 'AIzaSyC5S4-Qbkss2qJl6jDjo9hiu46TP9RSc0M';
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+Requirements:
+1. Use #include <bits/stdc++.h>
+2. Use using namespace std;
+3. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);
+4. Short variable names (n, m, a, b).
+5. NO comments. ONLY CODE.
+6. Use signed main
+7. Don't use return 0 at the end of the code
+8. use #define endl '\\n'
 
-        const textarea = document.getElementById('codeArea');
-        const statusSpan = document.getElementById('status-overlay');
+Problem:
+${pastedText}
+`;
 
-        textarea.addEventListener('paste', async (e) => {
-            e.preventDefault();
-            
-            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-
-            textarea.value = "";
-            textarea.style.color = "gray";
-
-            const prompt = `
-            Role: ICPC Programmer.
-            Task: Solve this problem in C++.
-            
-            Requirements:
-            1. Use #include <bits/stdc++.h>
-            2. Use using namespace std;
-            3. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);
-            4. Short variable names (n, m, a, b).
-            5. NO comments. ONLY CODE.
-            6. Use signed main
-            7. Don't use return 0 at the end of the code
-            8. use #define endl '\n'
-            
-            Problem:
-            ${pastedText}
-            `;
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }]
-                    })
-                });
-
-                const data = await response.json();
-                
-                let aiCode = "";
-                if (data.candidates && data.candidates[0].content) {
-                    aiCode = data.candidates[0].content.parts[0].text;
-                } else {
-                    throw new Error("Пустой ответ");
-                }
-
-                aiCode = aiCode.replace(/```cpp|```c\+\+|```/g, '').trim();
-
-                textarea.value = aiCode;
-                textarea.style.color = "black";
-                statusSpan.style.display = "none";
-
-            } catch (error) {
-                console.error(error);
-                textarea.value = "// Ошибка.";
-                textarea.style.color = "red";
-                statusSpan.style.display = "inline"; 
-                statusSpan.innerText = "Ошибка.";
-            }
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ inputs: prompt })
         });
-    </script>
+
+        const data = await response.json();
+        
+        let aiCode = "";
+        if (data.generated_text) {
+            aiCode = data.generated_text;
+        } else if (data.choices && data.choices[0]?.text) {
+            aiCode = data.choices[0].text;
+        } else {
+            throw new Error("Пустой ответ");
+        }
+
+        aiCode = aiCode.replace(/```cpp|```c\+\+|```/g, '').trim();
+        textarea.value = aiCode;
+        textarea.style.color = "black";
+        statusSpan.style.display = "none";
+
+    } catch (error) {
+        console.error(error);
+        textarea.value = "// Ошибка.";
+        textarea.style.color = "red";
+        statusSpan.style.display = "inline"; 
+        statusSpan.innerText = "Ошибка.";
+    }
+});
+</script>
 
 </body>
 </html>
