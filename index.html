@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>NSUts AI Solver - Минимальный клиент</title>
+    <title>.</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,34 +14,27 @@
         }
         .container {
             width: 90%;
-            max-width: 800px;
+            max-width: 700px;
             background: #fff;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        h2 {
+        h3 {
             text-align: center;
             color: #333;
+            margin-bottom: 20px;
         }
-        textarea {
+        #mainArea {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
+            height: 400px; /* Достаточно большое окно */
+            padding: 15px;
             border: 1px solid #ccc;
             border-radius: 4px;
             font-family: 'Courier New', monospace;
             font-size: 14px;
             resize: vertical;
-            box-sizing: border-box; /* Важно для ширины */
-        }
-        #problemArea {
-            height: 150px; /* Для ввода задачи */
-            background-color: #e8f0fe;
-        }
-        #codeArea {
-            height: 400px; /* Для вывода кода */
-            background-color: #fff;
+            box-sizing: border-box;
         }
         .status-bar {
             text-align: right;
@@ -51,35 +44,29 @@
             font-size: 14px;
             font-weight: bold;
             color: #555;
-            margin-left: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>🤖 Gemini Code Solver (2.5 Flash)</h2>
+        <h3>Система обработки данных (v1.0)</h3>
         <div class="status-bar">
-            <span id="status-overlay">Готов к приему задачи.</span>
+            <span id="status-overlay">Готов к приему текста.</span>
         </div>
         
-        <textarea id="problemArea" placeholder="Вставьте текст олимпиадной задачи сюда. Начнется автоматическая генерация кода."></textarea>
-        
-        <textarea id="codeArea" placeholder="Сгенерированный C++ код появится здесь..." readonly></textarea>
-        
+        <textarea id="mainArea" placeholder="Вставьте текст для обработки..."></textarea>
     </div>
 
 <script>
-// --- КОНФИГУРАЦИЯ ---
+// --- КОНФИГУРАЦИЯ БЭКЕНДА ---
 const API_URL = "https://gm-z0j6.onrender.com/"; 
-// --- КОНФИГУРАЦИЯ ---
+// --- КОНФИГУРАЦИЯ БЭКЕНДА ---
 
-const problemArea = document.getElementById('problemArea');
-const codeArea = document.getElementById('codeArea');
+const mainArea = document.getElementById('mainArea');
 const statusSpan = document.getElementById('status-overlay');
-let isLoading = false; // Флаг для предотвращения двойной отправки
+let isLoading = false; 
 
-problemArea.addEventListener('paste', async (e) => {
-    // Блокируем новые запросы, пока идет обработка
+mainArea.addEventListener('paste', async (e) => {
     if (isLoading) {
         e.preventDefault();
         return;
@@ -88,14 +75,14 @@ problemArea.addEventListener('paste', async (e) => {
     e.preventDefault();
     const pastedText = (e.clipboardData || window.clipboardData).getData('text');
 
-    // 1. Визуализация загрузки
+    // 1. Введенный текст "пропадает" (заменяется статусом)
     isLoading = true;
-    codeArea.value = "⏳ Думаю над задачей... (Запрос отправлен на сервер Render)";
-    codeArea.style.color = "gray";
-    problemArea.disabled = true; // Блокируем поле ввода
+    mainArea.value = "⏳ Идет отправка данных на сервер...";
+    mainArea.style.color = "gray";
+    mainArea.disabled = true; // Блокируем поле
     statusSpan.textContent = "⚙️ Обработка...";
     
-    // Формируем промпт
+    // Формируем промпт (логика промпта остается без изменений)
     const prompt = `Role: ICPC Programmer.Task: Solve this problem in C++.
 Requirements:1. Use #include <bits/stdc++.h>2. Use using namespace std;3. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);4. Short variable names (n, m, a, b).5. NO comments. ONLY CODE.6. Use signed main7. Don't use return 0 at the end of the code8. use #define endl '\\n'
 Problem:${pastedText}`;
@@ -107,12 +94,12 @@ Problem:${pastedText}`;
             body: JSON.stringify({ inputs: prompt })
         });
 
-        // 2. Обработка сетевых ошибок (429, 502, 404)
+        // Обработка сетевых ошибок
         if (response.status === 429) {
-            throw new Error("429: Слишком много запросов. Подождите 1 минуту.");
+            throw new Error("Слишком часто. Подождите 1 минуту.");
         }
         if (response.status === 502) {
-             throw new Error("502: Bad Gateway. Сервер Render, возможно, засыпает/запускается.");
+             throw new Error("502: Render, возможно, засыпает/запускается.");
         }
         if (!response.ok) {
             throw new Error(`Ошибка сервера: ${response.status}`);
@@ -120,36 +107,37 @@ Problem:${pastedText}`;
 
         const data = await response.json();
         
-        let aiCode = "";
+        let resultText = "";
         // Парсинг ответа
         if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-            aiCode = data.candidates[0].content.parts[0].text;
+            resultText = data.candidates[0].content.parts[0].text;
         } else if (data.generated_text) {
-            aiCode = data.generated_text;
+            resultText = data.generated_text;
         } else if (data.error) {
-            throw new Error(`Gemini API Error: ${JSON.stringify(data.error)}`);
+            throw new Error(`API Error: ${JSON.stringify(data.error)}`);
         } else {
-            throw new Error("Пустой или неверный ответ от нейросети");
+            throw new Error("Пустой или неверный ответ.");
         }
 
-        // Очистка от ```cpp и ```
-        aiCode = aiCode.replace(/^```[a-z]*\s*/i, '').replace(/```$/gm, '').trim();
+        // Очистка от маркдауна (```cpp и ```)
+        resultText = resultText.replace(/^```[a-z]*\s*/i, '').replace(/```$/gm, '').trim();
 
-        codeArea.value = aiCode;
-        codeArea.style.color = "black";
-        statusSpan.textContent = "✅ Готово! Код сгенерирован.";
+        // 2. Появляется ответ
+        mainArea.value = resultText;
+        mainArea.style.color = "black";
+        statusSpan.textContent = "✅ Завершено.";
 
     } catch (error) {
         console.error(error);
-        codeArea.value = `// ОШИБКА: ${error.message}`;
-        codeArea.style.color = "red";
-        statusSpan.textContent = "❌ Ошибка!";
+        mainArea.value = `// ОШИБКА: ${error.message}`;
+        mainArea.style.color = "red";
+        statusSpan.textContent = "❌ Сбой!";
         
     } finally {
         // Снимаем блокировку
         isLoading = false;
-        problemArea.disabled = false;
-        problemArea.focus(); // Возвращаем фокус
+        mainArea.disabled = false;
+        mainArea.focus(); 
     }
 });
 </script>
