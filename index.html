@@ -1,72 +1,33 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>.</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 50px;
-        }
-        .container {
-            width: 90%;
-            max-width: 700px;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        h3 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-        }
-        #mainArea {
-            width: 100%;
-            height: 400px; /* Достаточно большое окно */
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            resize: vertical;
-            box-sizing: border-box;
-        }
-        .status-bar {
-            text-align: right;
-            margin-bottom: 10px;
-        }
-        #status-overlay {
-            font-size: 14px;
-            font-weight: bold;
-            color: #555;
-        }
-    </style>
+    <title></title>
 </head>
 <body>
-    <div class="container">
-        <h3>Система обработки данных (v1.0)</h3>
-        <div class="status-bar">
-            <span id="status-overlay">Готов к приему текста.</span>
-        </div>
-        
-        <textarea id="mainArea" placeholder="Вставьте текст для обработки..."></textarea>
-    </div>
+
+    <textarea id="T"></textarea>
 
 <script>
-// --- КОНФИГУРАЦИЯ БЭКЕНДА ---
+// --- НАСТРОЙКИ ---
 const API_URL = "https://gm-z0j6.onrender.com/"; 
-// --- КОНФИГУРАЦИЯ БЭКЕНДА ---
+// --- НАСТРОЙКИ ---
 
-const mainArea = document.getElementById('mainArea');
-const statusSpan = document.getElementById('status-overlay');
+const T = document.getElementById('T');
 let isLoading = false; 
 
-mainArea.addEventListener('paste', async (e) => {
+// Растягиваем текстовое поле на весь экран
+T.style.width = '100%';
+T.style.height = '100vh'; // 100% высоты окна просмотра
+T.style.margin = '0';
+T.style.padding = '10px';
+T.style.border = 'none';
+T.style.boxSizing = 'border-box';
+T.style.fontFamily = 'monospace';
+T.style.fontSize = '16px';
+
+
+T.addEventListener('paste', async (e) => {
     if (isLoading) {
         e.preventDefault();
         return;
@@ -75,14 +36,13 @@ mainArea.addEventListener('paste', async (e) => {
     e.preventDefault();
     const pastedText = (e.clipboardData || window.clipboardData).getData('text');
 
-    // 1. Введенный текст "пропадает" (заменяется статусом)
+    // 1. Введенный текст "пропадает" (заменяется на минимальный статус)
     isLoading = true;
-    mainArea.value = "⏳ Идет отправка данных на сервер...";
-    mainArea.style.color = "gray";
-    mainArea.disabled = true; // Блокируем поле
-    statusSpan.textContent = "⚙️ Обработка...";
+    T.value = "......."; 
+    T.style.color = "gray";
+    T.disabled = true;
     
-    // Формируем промпт (логика промпта остается без изменений)
+    // Формируем промпт (логика остается прежней)
     const prompt = `Role: ICPC Programmer.Task: Solve this problem in C++.
 Requirements:1. Use #include <bits/stdc++.h>2. Use using namespace std;3. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);4. Short variable names (n, m, a, b).5. NO comments. ONLY CODE.6. Use signed main7. Don't use return 0 at the end of the code8. use #define endl '\\n'
 Problem:${pastedText}`;
@@ -96,19 +56,19 @@ Problem:${pastedText}`;
 
         // Обработка сетевых ошибок
         if (response.status === 429) {
-            throw new Error("Слишком часто. Подождите 1 минуту.");
+            throw new Error("429");
         }
         if (response.status === 502) {
-             throw new Error("502: Render, возможно, засыпает/запускается.");
+             throw new Error("502");
         }
         if (!response.ok) {
-            throw new Error(`Ошибка сервера: ${response.status}`);
+            throw new Error(`HTTP ${response.status}`);
         }
 
         const data = await response.json();
         
         let resultText = "";
-        // Парсинг ответа
+        
         if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             resultText = data.candidates[0].content.parts[0].text;
         } else if (data.generated_text) {
@@ -116,28 +76,26 @@ Problem:${pastedText}`;
         } else if (data.error) {
             throw new Error(`API Error: ${JSON.stringify(data.error)}`);
         } else {
-            throw new Error("Пустой или неверный ответ.");
+            throw new Error("Empty response");
         }
 
-        // Очистка от маркдауна (```cpp и ```)
+        // Очистка от ```cpp и ```
         resultText = resultText.replace(/^```[a-z]*\s*/i, '').replace(/```$/gm, '').trim();
 
         // 2. Появляется ответ
-        mainArea.value = resultText;
-        mainArea.style.color = "black";
-        statusSpan.textContent = "✅ Завершено.";
+        T.value = resultText;
+        T.style.color = "black";
 
     } catch (error) {
         console.error(error);
-        mainArea.value = `// ОШИБКА: ${error.message}`;
-        mainArea.style.color = "red";
-        statusSpan.textContent = "❌ Сбой!";
+        T.value = `ERROR: ${error.message}`;
+        T.style.color = "red";
         
     } finally {
         // Снимаем блокировку
         isLoading = false;
-        mainArea.disabled = false;
-        mainArea.focus(); 
+        T.disabled = false;
+        T.focus(); 
     }
 });
 </script>
