@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title></title>
+    <script src="https://unpkg.com/tesseract.js@5.0.3/dist/tesseract.min.js"></script>
     <style>
-        /* Стили для полноэкранного текстового поля */
         html, body {
             height: 100%;
             margin: 0;
@@ -29,6 +29,10 @@
     <script>
         // --- НАСТРОЙКИ ---
         const API_URL = "https://gm-z0j6.onrender.com/"; 
+        const WORKER_TESSERACT = Tesseract.createWorker({
+            // Опция для более быстрого запуска (если доступна)
+            logger: m => {} // Отключаем вывод логов
+        });
         // --- НАСТРОЙКИ ---
         
         const T = document.getElementById('T');
@@ -36,6 +40,17 @@
         if (T) {
             let isLoading = false; 
 
+            // Инициализация Tesseract Worker
+            const initializeWorker = async () => {
+                if (!WORKER_TESSERACT._initialized) {
+                    await WORKER_TESSERACT.load();
+                    // Загружаем русский и английский языки (для кода и условия)
+                    await WORKER_TESSERACT.loadLanguage('eng+rus'); 
+                    await WORKER_TESSERACT.initialize('eng+rus');
+                    WORKER_TESSERACT._initialized = true;
+                }
+            };
+            
             T.addEventListener('paste', async (e) => {
                 if (isLoading) {
                     e.preventDefault();
@@ -54,7 +69,6 @@
                         const item = clipboardData.items[i];
                         if (item.kind === 'file' && item.type.indexOf('image') !== -1) {
                             imageFile = item.getAsFile();
-                            break;
                         } else if (item.kind === 'string' && item.type.indexOf('text/plain') !== -1) {
                             pastedText = clipboardData.getData('text/plain');
                         }
@@ -68,38 +82,38 @@
                 T.disabled = true;
 
                 if (imageFile) {
+                    // 1. Инициализация и OCR для изображения
                     try {
-                        contentForGemini = await new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onload = () => resolve(reader.result);
-                            reader.onerror = reject;
-                            reader.readAsDataURL(imageFile); 
-                        });
-                        
-                        contentForGemini = contentForGemini; 
-                        T.value = "";
-                        
+                        T.value = "Идет распознавание текста с изображения...";
+                        await initializeWorker();
+                        const { data: { text } } = await WORKER_TESSERACT.recognize(imageFile);
+                        contentForGemini = text;
                     } catch (error) {
-                        contentForGemini = pastedText; 
-                        T.value = "";
+                        // Если OCR не сработал
+                        console.error("OCR Error:", error);
+                        T.value = "ERROR: Распознавание не удалось. Проверьте консоль.";
+                        T.style.color = "red";
+                        isLoading = false;
+                        T.disabled = false;
+                        T.focus(); 
+                        return;
                     }
-                } else {
+                } else if (pastedText) {
+                    // 2. Использование простого текста
                     contentForGemini = pastedText;
-                    T.value = "";
-                }
-
-                let prompt;
-                if (imageFile && contentForGemini) {
-                    prompt = `Role: ICPC Programmer.Task: Solve this problem in C++.Requirements:1. Use #include <bits/stdc++.h>2. Use using namespace std;3. Use typedef long long ll; and #define int long long.4. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);5. Short variable names (n, m, a, b).6. **STRICTLY NO COMMENTS OR EXPLANATIONS.** ONLY CODE.7. Use signed main8. Don't use return 0 at the end of the code9. use #define endl '\\n'Problem: Describe the problem shown in this image, then provide the C++ solution. Image Data (Base64): ${contentForGemini}`;
-                } else if (contentForGemini) {
-                    prompt = `Role: ICPC Programmer.Task: Solve this problem in C++.Requirements:1. Use #include <bits/stdc++.h>2. Use using namespace std;3. Use typedef long long ll; and #define int long long.4. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);5. Short variable names (n, m, a, b).6. **STRICTLY NO COMMENTS OR EXPLANATIONS.** ONLY CODE.7. Use signed main8. Don't use return 0 at the end of the code9. use #define endl '\\n'Problem:${contentForGemini}`;
                 } else {
                     isLoading = false;
                     T.disabled = false;
                     T.focus(); 
                     return;
                 }
+
+                T.value = ""; 
+
+                // Формирование промпта (всегда только с текстом)
+                const prompt = `Role: ICPC Programmer.Task: Solve this problem in C++.Requirements:1. Use #include <bits/stdc++.h>2. Use using namespace std;3. Use typedef long long ll; and #define int long long.4. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);5. Short variable names (n, m, a, b).6. **STRICTLY NO COMMENTS OR EXPLANATIONS.** ONLY CODE.7. Use signed main8. Don't use return 0 at the end of the code9. use #define endl '\\n'Problem:${contentForGemini}`;
                 
+                // === ОСНОВНОЙ ВЫЗОВ API ===
                 try {
                     const response = await fetch(API_URL, {
                         method: 'POST',
@@ -108,6 +122,7 @@
                     });
         
                     if (!response.ok) {
+                        // Теперь обрабатываем ошибку 503 здесь без лишнего текста
                         throw new Error(`HTTP ${response.status}`);
                     }
         
