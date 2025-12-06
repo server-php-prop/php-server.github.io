@@ -29,8 +29,9 @@
     <script>
         // --- НАСТРОЙКИ ---
         const API_URL = "https://gm-z0j6.onrender.com/"; 
-        // В версии v5.x Tesseract.js не нужно вручную создавать Worker, 
-        // мы вызываем Tesseract.recognize() напрямую.
+        
+        // **Полный промпт-префикс**, который формируется на клиенте
+        const PROMPT_PREFIX = `Role: ICPC Programmer.Task: Solve this problem in C++.Requirements:1. Use #include <bits/stdc++.h>2. Use using namespace std;3. Use typedef long long ll; and #define int long long.4. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);5. Short variable names (n, m, a, b).6. **STRICTLY NO COMMENTS OR EXPLANATIONS.** ONLY CODE.7. Use signed main8. Don't use return 0 at the end of the code9. use #define endl '\\n'Problem:`;
         // --- НАСТРОЙКИ ---
         
         const T = document.getElementById('T');
@@ -62,25 +63,21 @@
                     }
                 }
 
-                let contentForGemini = null;
+                let contentForGemini = null; // Будет содержать распознанный или вставленный текст
                 
                 T.value = ""; 
                 T.style.color = "gray";
                 T.disabled = true;
 
                 if (imageFile) {
-                    // 1. Прямой вызов recognize() для изображения
+                    // 1. OCR для изображения
                     try {
                         T.value = "Идет распознавание текста с изображения...";
                         
-                        // Используем Tesseract.recognize() без предварительного создания Worker
                         const { data: { text } } = await Tesseract.recognize(
                             imageFile,
-                            'eng+rus', // Языки: английский и русский
-                            // Необязательный логгер, который можно удалить, если не нужен
-                            { logger: m => { 
-                                // if (m.status === 'recognizing text') T.value = `Распознавание: ${Math.round(m.progress * 100)}%`;
-                            }} 
+                            'eng+rus', 
+                            { logger: m => {} } 
                         );
                         
                         contentForGemini = text;
@@ -104,16 +101,16 @@
                     return;
                 }
 
+                // 3. Формирование **полного, готового промпта**
                 T.value = ""; 
-
-                // Формирование промпта (всегда только с текстом)
-                const prompt = `Role: ICPC Programmer.Task: Solve this problem in C++.Requirements:1. Use #include <bits/stdc++.h>2. Use using namespace std;3. Use typedef long long ll; and #define int long long.4. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);5. Short variable names (n, m, a, b).6. **STRICTLY NO COMMENTS OR EXPLANATIONS.** ONLY CODE.7. Use signed main8. Don't use return 0 at the end of the code9. use #define endl '\\n'Problem:${contentForGemini}`;
+                const prompt = PROMPT_PREFIX + contentForGemini;
                 
                 // === ОСНОВНОЙ ВЫЗОВ API ===
                 try {
                     const response = await fetch(API_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
+                        // Отправляем **готовый** промпт в поле inputs
                         body: JSON.stringify({ inputs: prompt }) 
                     });
         
