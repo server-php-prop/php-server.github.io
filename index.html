@@ -3,107 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <title></title>
+    <style>
+        /* Стили для полноэкранного текстового поля */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; 
+        }
+        #T {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 10px;
+            border: none;
+            box-sizing: border-box;
+            font-family: monospace;
+            font-size: 16px;
+            resize: none; 
+        }
+    </style>
 </head>
 <body>
     <textarea id="T"></textarea>
-<script>
-// --- НАСТРОЙКИ ---
-const API_URL = "https://gm-z0j6.onrender.com/"; 
-// --- НАСТРОЙКИ ---
-
-// ИЗМЕНЕНИЕ: Добавляем сброс стилей для HTML и BODY
-document.documentElement.style.height = '100%';
-document.body.style.height = '100%';
-document.body.style.margin = '0';
-document.body.style.padding = '0';
-
-const T = document.getElementById('T');
-
-if (T) {
-    let isLoading = false; 
-
-    // Стили текстового поля (теперь используем 100% вместо 100vh для стабильности)
-    T.style.width = '100%';
-    T.style.height = '100%'; 
-    T.style.margin = '0';
-    T.style.padding = '10px';
-    T.style.border = 'none';
-    T.style.boxSizing = 'border-box';
-    T.style.fontFamily = 'monospace';
-    T.style.fontSize = '16px';
-
-
-    T.addEventListener('paste', async (e) => {
-        if (isLoading) {
-            e.preventDefault();
-            return;
-        }
-
-        e.preventDefault();
-        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-
-        // 1. Введенный текст "пропадает" (заменяется на минимальный статус)
-        isLoading = true;
-        T.value = "......."; 
-        T.style.color = "gray";
-        T.disabled = true;
+    <script>
+        // --- НАСТРОЙКИ ---
+        const API_URL = "https://gm-z0j6.onrender.com/"; 
+        // --- НАСТРОЙКИ ---
         
-        // Формируем промпт (логика остается прежней)
-        const prompt = `Role: ICPC Programmer.Task: Solve this problem in C++.
-Requirements:1. Use #include <bits/stdc++.h>2. Use using namespace std;3. Use typedef long long ll; and #define int long long.4. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);5. Short variable names (n, m, a, b).6. **STRICTLY NO COMMENTS OR EXPLANATIONS.** ONLY CODE.7. Use signed main8. Don't use return 0 at the end of the code9. use #define endl '\\n'Problem:${pastedText}`;
+        const T = document.getElementById('T');
+        
+        if (T) {
+            let isLoading = false; 
 
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ inputs: prompt })
+            T.addEventListener('paste', async (e) => {
+                if (isLoading) {
+                    e.preventDefault();
+                    return;
+                }
+                
+                e.preventDefault();
+                isLoading = true;
+                
+                const clipboardData = e.clipboardData || window.clipboardData;
+                let imageFile = null;
+                let pastedText = "";
+
+                if (clipboardData && clipboardData.items) {
+                    for (let i = 0; i < clipboardData.items.length; i++) {
+                        const item = clipboardData.items[i];
+                        if (item.kind === 'file' && item.type.indexOf('image') !== -1) {
+                            imageFile = item.getAsFile();
+                            break;
+                        } else if (item.kind === 'string' && item.type.indexOf('text/plain') !== -1) {
+                            pastedText = clipboardData.getData('text/plain');
+                        }
+                    }
+                }
+
+                let contentForGemini = null;
+                
+                T.value = ""; 
+                T.style.color = "gray";
+                T.disabled = true;
+
+                if (imageFile) {
+                    try {
+                        contentForGemini = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(imageFile); 
+                        });
+                        
+                        contentForGemini = contentForGemini; 
+                        T.value = "";
+                        
+                    } catch (error) {
+                        contentForGemini = pastedText; 
+                        T.value = "";
+                    }
+                } else {
+                    contentForGemini = pastedText;
+                    T.value = "";
+                }
+
+                let prompt;
+                if (imageFile && contentForGemini) {
+                    prompt = `Role: ICPC Programmer.Task: Solve this problem in C++.Requirements:1. Use #include <bits/stdc++.h>2. Use using namespace std;3. Use typedef long long ll; and #define int long long.4. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);5. Short variable names (n, m, a, b).6. **STRICTLY NO COMMENTS OR EXPLANATIONS.** ONLY CODE.7. Use signed main8. Don't use return 0 at the end of the code9. use #define endl '\\n'Problem: Describe the problem shown in this image, then provide the C++ solution. Image Data (Base64): ${contentForGemini}`;
+                } else if (contentForGemini) {
+                    prompt = `Role: ICPC Programmer.Task: Solve this problem in C++.Requirements:1. Use #include <bits/stdc++.h>2. Use using namespace std;3. Use typedef long long ll; and #define int long long.4. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);5. Short variable names (n, m, a, b).6. **STRICTLY NO COMMENTS OR EXPLANATIONS.** ONLY CODE.7. Use signed main8. Don't use return 0 at the end of the code9. use #define endl '\\n'Problem:${contentForGemini}`;
+                } else {
+                    isLoading = false;
+                    T.disabled = false;
+                    T.focus(); 
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ inputs: prompt }) 
+                    });
+        
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+        
+                    const data = await response.json();                        
+                    let resultText = "";                        
+        
+                    if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+                        resultText = data.candidates[0].content.parts[0].text;
+                    } else if (data.generated_text) {
+                        resultText = data.generated_text;
+                    } else if (data.error) {
+                        throw new Error(`API Error: ${JSON.stringify(data.error)}`);
+                    } else {
+                        throw new Error("Empty response");
+                    }
+        
+                    resultText = resultText.replace(/^```[a-z]*\s*/i, '').replace(/```$/gm, '').trim();
+        
+                    T.value = resultText;
+                    T.style.color = "black";
+        
+                } catch (error) {
+                    T.value = `ERROR: ${error.message}`;
+                    T.style.color = "red";
+                } finally {
+                    isLoading = false;
+                    T.disabled = false;
+                    T.focus(); 
+                }
             });
-
-            // Обработка сетевых ошибок
-            if (response.status === 429) {
-                throw new Error("429");
-            }
-            if (response.status === 502) {
-                 throw new Error("502");
-            }
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            let resultText = "";
-            
-            if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-                resultText = data.candidates[0].content.parts[0].text;
-            } else if (data.generated_text) {
-                resultText = data.generated_text;
-            } else if (data.error) {
-                throw new Error(`API Error: ${JSON.stringify(data.error)}`);
-            } else {
-                throw new Error("Empty response");
-            }
-
-            // Очистка от ```cpp и ```
-            resultText = resultText.replace(/^```[a-z]*\s*/i, '').replace(/```$/gm, '').trim();
-
-            // 2. Появляется ответ
-            T.value = resultText;
-            T.style.color = "black";
-
-        } catch (error) {
-            console.error(error);
-            T.value = `ERROR: ${error.message}`;
-            T.style.color = "red";
-            
-        } finally {
-            // Снимаем блокировку
-            isLoading = false;
-            T.disabled = false;
-            T.focus(); 
         }
-    });
-}
-</script>
+    </script>
 </body>
 </html>
