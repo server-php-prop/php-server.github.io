@@ -29,27 +29,14 @@
     <script>
         // --- НАСТРОЙКИ ---
         const API_URL = "https://gm-z0j6.onrender.com/"; 
-        const WORKER_TESSERACT = Tesseract.createWorker({
-            // Опция для более быстрого запуска (если доступна)
-            logger: m => {} // Отключаем вывод логов
-        });
+        // В версии v5.x Tesseract.js не нужно вручную создавать Worker, 
+        // мы вызываем Tesseract.recognize() напрямую.
         // --- НАСТРОЙКИ ---
         
         const T = document.getElementById('T');
         
         if (T) {
             let isLoading = false; 
-
-            // Инициализация Tesseract Worker
-            const initializeWorker = async () => {
-                if (!WORKER_TESSERACT._initialized) {
-                    await WORKER_TESSERACT.load();
-                    // Загружаем русский и английский языки (для кода и условия)
-                    await WORKER_TESSERACT.loadLanguage('eng+rus'); 
-                    await WORKER_TESSERACT.initialize('eng+rus');
-                    WORKER_TESSERACT._initialized = true;
-                }
-            };
             
             T.addEventListener('paste', async (e) => {
                 if (isLoading) {
@@ -82,16 +69,25 @@
                 T.disabled = true;
 
                 if (imageFile) {
-                    // 1. Инициализация и OCR для изображения
+                    // 1. Прямой вызов recognize() для изображения
                     try {
                         T.value = "Идет распознавание текста с изображения...";
-                        await initializeWorker();
-                        const { data: { text } } = await WORKER_TESSERACT.recognize(imageFile);
+                        
+                        // Используем Tesseract.recognize() без предварительного создания Worker
+                        const { data: { text } } = await Tesseract.recognize(
+                            imageFile,
+                            'eng+rus', // Языки: английский и русский
+                            // Необязательный логгер, который можно удалить, если не нужен
+                            { logger: m => { 
+                                // if (m.status === 'recognizing text') T.value = `Распознавание: ${Math.round(m.progress * 100)}%`;
+                            }} 
+                        );
+                        
                         contentForGemini = text;
+                        
                     } catch (error) {
-                        // Если OCR не сработал
                         console.error("OCR Error:", error);
-                        T.value = "ERROR: Распознавание не удалось. Проверьте консоль.";
+                        T.value = `ERROR: Распознавание не удалось. ${error.message}`;
                         T.style.color = "red";
                         isLoading = false;
                         T.disabled = false;
@@ -122,7 +118,6 @@
                     });
         
                     if (!response.ok) {
-                        // Теперь обрабатываем ошибку 503 здесь без лишнего текста
                         throw new Error(`HTTP ${response.status}`);
                     }
         
