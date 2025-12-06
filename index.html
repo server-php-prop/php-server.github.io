@@ -1,13 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title></title>
-</head>
-<body>
-
-    <textarea id="T"></textarea>
-
 <script>
 // --- НАСТРОЙКИ ---
 const API_URL = "https://gm-z0j6.onrender.com/"; 
@@ -18,7 +8,7 @@ let isLoading = false;
 
 // Растягиваем текстовое поле на весь экран
 T.style.width = '100%';
-T.style.height = '100vh'; // 100% высоты окна просмотра
+T.style.height = '100vh'; 
 T.style.margin = '0';
 T.style.padding = '10px';
 T.style.border = 'none';
@@ -42,10 +32,22 @@ T.addEventListener('paste', async (e) => {
     T.style.color = "gray";
     T.disabled = true;
     
-    // Формируем промпт (логика остается прежней)
-    const prompt = `Role: ICPC Programmer.Task: Solve this problem in C++.
-Requirements:1. Use #include <bits/stdc++.h>2. Use using namespace std;3. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);4. Short variable names (n, m, a, b).5. NO comments. ONLY CODE.6. Use signed main7. Don't use return 0 at the end of the code8. use #define endl '\\n'
+    // ------------------------------------------------------------------
+    // --- ИЗМЕНЕННЫЙ ПРОМПТ ДЛЯ УСИЛЕНИЯ ТРЕБОВАНИЙ И long long ---
+    // ------------------------------------------------------------------
+    const prompt = `Role: ICPC Programmer. Task: Solve this problem in C++.
+Requirements:
+1. Use #include <bits/stdc++.h>
+2. Use using namespace std;
+3. Use typedef long long ll; and #define int long long.
+4. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);
+5. Short variable names (n, m, a, b).
+6. **STRICTLY NO COMMENTS OR EXPLANATIONS.** ONLY CODE.
+7. Use signed main
+8. Don't use return 0 at the end of the code
+9. use #define endl '\\n'
 Problem:${pastedText}`;
+    // ------------------------------------------------------------------
 
     try {
         const response = await fetch(API_URL, {
@@ -99,5 +101,3 @@ Problem:${pastedText}`;
     }
 });
 </script>
-</body>
-</html>
