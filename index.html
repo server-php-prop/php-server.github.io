@@ -1,97 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+    <textarea id="T"></textarea>
 <script>
 // --- НАСТРОЙКИ ---
 const API_URL = "https://gm-z0j6.onrender.com/"; 
 // --- НАСТРОЙКИ ---
 
-// ИЗМЕНЕНИЕ: Сначала находим элемент T, потом используем его.
+// ИЗМЕНЕНИЕ: Добавляем сброс стилей для HTML и BODY
+document.documentElement.style.height = '100%';
+document.body.style.height = '100%';
+document.body.style.margin = '0';
+document.body.style.padding = '0';
+
 const T = document.getElementById('T');
 
-// Проверяем, что элемент найден, прежде чем применять стили
 if (T) {
+    let isLoading = false; 
+
+    // Стили текстового поля (теперь используем 100% вместо 100vh для стабильности)
     T.style.width = '100%';
-    T.style.height = '100vh'; // 100% высоты окна просмотра
+    T.style.height = '100%'; 
     T.style.margin = '0';
     T.style.padding = '10px';
     T.style.border = 'none';
     T.style.boxSizing = 'border-box';
     T.style.fontFamily = 'monospace';
     T.style.fontSize = '16px';
-} else {
-    // Если элемент не найден (на всякий случай)
-    console.error("Textarea element with ID 'T' not found.");
-}
 
 
-let isLoading = false; 
+    T.addEventListener('paste', async (e) => {
+        if (isLoading) {
+            e.preventDefault();
+            return;
+        }
 
-T.addEventListener('paste', async (e) => {
-    if (isLoading) {
         e.preventDefault();
-        return;
-    }
+        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
 
-    e.preventDefault();
-    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-
-    // 1. Введенный текст "пропадает" (заменяется на минимальный статус)
-    isLoading = true;
-    T.value = "......."; 
-    T.style.color = "gray";
-    T.disabled = true;
-    
-    // Формируем промпт (логика остается прежней)
-    const prompt = `Role: ICPC Programmer.Task: Solve this problem in C++.
+        // 1. Введенный текст "пропадает" (заменяется на минимальный статус)
+        isLoading = true;
+        T.value = "......."; 
+        T.style.color = "gray";
+        T.disabled = true;
+        
+        // Формируем промпт (логика остается прежней)
+        const prompt = `Role: ICPC Programmer.Task: Solve this problem in C++.
 Requirements:1. Use #include <bits/stdc++.h>2. Use using namespace std;3. Use typedef long long ll; and #define int long long.4. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);5. Short variable names (n, m, a, b).6. **STRICTLY NO COMMENTS OR EXPLANATIONS.** ONLY CODE.7. Use signed main8. Don't use return 0 at the end of the code9. use #define endl '\\n'Problem:${pastedText}`;
 
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ inputs: prompt })
-        });
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ inputs: prompt })
+            });
 
-        // Обработка сетевых ошибок
-        if (response.status === 429) {
-            throw new Error("429");
+            // Обработка сетевых ошибок
+            if (response.status === 429) {
+                throw new Error("429");
+            }
+            if (response.status === 502) {
+                 throw new Error("502");
+            }
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            let resultText = "";
+            
+            if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+                resultText = data.candidates[0].content.parts[0].text;
+            } else if (data.generated_text) {
+                resultText = data.generated_text;
+            } else if (data.error) {
+                throw new Error(`API Error: ${JSON.stringify(data.error)}`);
+            } else {
+                throw new Error("Empty response");
+            }
+
+            // Очистка от ```cpp и ```
+            resultText = resultText.replace(/^```[a-z]*\s*/i, '').replace(/```$/gm, '').trim();
+
+            // 2. Появляется ответ
+            T.value = resultText;
+            T.style.color = "black";
+
+        } catch (error) {
+            console.error(error);
+            T.value = `ERROR: ${error.message}`;
+            T.style.color = "red";
+            
+        } finally {
+            // Снимаем блокировку
+            isLoading = false;
+            T.disabled = false;
+            T.focus(); 
         }
-        if (response.status === 502) {
-             throw new Error("502");
-        }
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        let resultText = "";
-        
-        if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-            resultText = data.candidates[0].content.parts[0].text;
-        } else if (data.generated_text) {
-            resultText = data.generated_text;
-        } else if (data.error) {
-            throw new Error(`API Error: ${JSON.stringify(data.error)}`);
-        } else {
-            throw new Error("Empty response");
-        }
-
-        // Очистка от ```cpp и ```
-        resultText = resultText.replace(/^```[a-z]*\s*/i, '').replace(/```$/gm, '').trim();
-
-        // 2. Появляется ответ
-        T.value = resultText;
-        T.style.color = "black";
-
-    } catch (error) {
-        console.error(error);
-        T.value = `ERROR: ${error.message}`;
-        T.style.color = "red";
-        
-    } finally {
-        // Снимаем блокировку
-        isLoading = false;
-        T.disabled = false;
-        T.focus(); 
-    }
-});
+    });
+}
 </script>
+</body>
+</html>
