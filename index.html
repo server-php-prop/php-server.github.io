@@ -3,19 +3,26 @@
 const API_URL = "https://gm-z0j6.onrender.com/"; 
 // --- НАСТРОЙКИ ---
 
+// ИЗМЕНЕНИЕ: Сначала находим элемент T, потом используем его.
 const T = document.getElementById('T');
+
+// Проверяем, что элемент найден, прежде чем применять стили
+if (T) {
+    T.style.width = '100%';
+    T.style.height = '100vh'; // 100% высоты окна просмотра
+    T.style.margin = '0';
+    T.style.padding = '10px';
+    T.style.border = 'none';
+    T.style.boxSizing = 'border-box';
+    T.style.fontFamily = 'monospace';
+    T.style.fontSize = '16px';
+} else {
+    // Если элемент не найден (на всякий случай)
+    console.error("Textarea element with ID 'T' not found.");
+}
+
+
 let isLoading = false; 
-
-// Растягиваем текстовое поле на весь экран
-T.style.width = '100%';
-T.style.height = '100vh'; 
-T.style.margin = '0';
-T.style.padding = '10px';
-T.style.border = 'none';
-T.style.boxSizing = 'border-box';
-T.style.fontFamily = 'monospace';
-T.style.fontSize = '16px';
-
 
 T.addEventListener('paste', async (e) => {
     if (isLoading) {
@@ -32,22 +39,9 @@ T.addEventListener('paste', async (e) => {
     T.style.color = "gray";
     T.disabled = true;
     
-    // ------------------------------------------------------------------
-    // --- ИЗМЕНЕННЫЙ ПРОМПТ ДЛЯ УСИЛЕНИЯ ТРЕБОВАНИЙ И long long ---
-    // ------------------------------------------------------------------
-    const prompt = `Role: ICPC Programmer. Task: Solve this problem in C++.
-Requirements:
-1. Use #include <bits/stdc++.h>
-2. Use using namespace std;
-3. Use typedef long long ll; and #define int long long.
-4. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);
-5. Short variable names (n, m, a, b).
-6. **STRICTLY NO COMMENTS OR EXPLANATIONS.** ONLY CODE.
-7. Use signed main
-8. Don't use return 0 at the end of the code
-9. use #define endl '\\n'
-Problem:${pastedText}`;
-    // ------------------------------------------------------------------
+    // Формируем промпт (логика остается прежней)
+    const prompt = `Role: ICPC Programmer.Task: Solve this problem in C++.
+Requirements:1. Use #include <bits/stdc++.h>2. Use using namespace std;3. Use typedef long long ll; and #define int long long.4. Optimize I/O: ios_base::sync_with_stdio(0); cin.tie(0);5. Short variable names (n, m, a, b).6. **STRICTLY NO COMMENTS OR EXPLANATIONS.** ONLY CODE.7. Use signed main8. Don't use return 0 at the end of the code9. use #define endl '\\n'Problem:${pastedText}`;
 
     try {
         const response = await fetch(API_URL, {
